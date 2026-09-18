@@ -26,17 +26,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.TextButton
 import com.example.listycity3.ui.theme.ListyCity3Theme
 
 @Composable
 fun CityListScreen(
     cities: List<City>,
     onAddCity: (City) -> Unit,
+    onEditCity: (City, City) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var newCityName by remember { mutableStateOf("") }
     var newProvinceName by remember { mutableStateOf("") }
     var showAddCityFields by remember {mutableStateOf(false)}
+    var selectedCity by remember { mutableStateOf<City?>(null) }
+    var editCityName by remember { mutableStateOf("") }
+    var editProvinceName by remember { mutableStateOf("") }
     Column(modifier = modifier.fillMaxSize()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -91,10 +97,71 @@ fun CityListScreen(
                 }
             }
         }
-
+        if (selectedCity != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                OutlinedTextField(
+                    value = editCityName,
+                    onValueChange = { editCityName = it },
+                    label = { Text("City") },
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                OutlinedTextField(
+                    value = editProvinceName,
+                    onValueChange = { editProvinceName = it },
+                    label = { Text("Province") },
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    modifier = Modifier.padding(vertical = 12.dp),
+                    onClick = {
+                        val old = selectedCity
+                        if (old != null &&
+                            editCityName.isNotBlank() &&
+                            editProvinceName.isNotBlank()
+                        ) {
+                            onEditCity(
+                                old,
+                                City(editCityName, editProvinceName)
+                            )
+                            // close the form
+                            selectedCity = null
+                            editCityName = ""
+                            editProvinceName = ""
+                        }
+                    }
+                ) {
+                    Text("Save")
+                }
+                Spacer(modifier = Modifier.width(4.dp))
+                TextButton(
+                    modifier = Modifier.padding(vertical = 12.dp),
+                    onClick = {
+                        selectedCity = null
+                        editCityName = ""
+                        editProvinceName = ""
+                    }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        }
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             itemsIndexed(cities) { index, city ->
-                CityRow(city = city)
+                CityRow(
+                    city = city,
+
+                    onClick = {
+                        selectedCity = city
+                        editCityName = city.name
+                        editProvinceName = city.province
+                    }
+                )
 
                 if (index < cities.lastIndex) {
                     HorizontalDivider()
@@ -105,10 +172,11 @@ fun CityListScreen(
 }
 
 @Composable
-fun CityRow(city: City) {
+fun CityRow(city: City, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable {onClick()}
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
         Text(
@@ -135,7 +203,8 @@ fun CityListScreenPreview() {
                 City("Vancouver", "BC"),
                 City("Calgary", "AB")
             ),
-            onAddCity = {}
+            onAddCity = {},
+            onEditCity = {city1, city2 ->}
         )
     }
 }
